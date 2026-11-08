@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="bg">#F5F6FA</color>
+    <color name="navy">#1E1B4B</color>
+    <color name="indigo">#3B2F8F</color>
+    <color name="primary">#FF4D6D</color>
+    <color name="primary_disabled">#C9CBD6</color>
+    <color name="text">#1F2430</color>
+    <color name="muted">#6B7280</color>
+    <color name="card">#FFFFFF</color>
+    <color name="input_bg">#F1F2F8</color>
+    <color name="log_bg">#12122A</color>
+    <color name="log_text">#B8F5C8</color>
+    <color name="ic_bg">#1E1B4B</color>
+</resources>
