@@ -157,30 +157,49 @@ class MainActivity : Activity() {
         progressBar.progress = 0
         setStatus("Downloading...")
         log("> $url")
+        val audio = rbAudio.isChecked
 
         Thread {
-            try {
-                val request = YoutubeDLRequest(url)
-                request.addOption("-o", outDir.absolutePath + "/%(title)s.%(ext)s")
-                if (rbAudio.isChecked) {
-                    request.addOption("-x")
-                    request.addOption("--audio-format", "mp3")
-                } else {
-                    request.addOption("-f", "best[ext=mp4]/best")
+            // YouTube blocks some player clients; try several until one works.
+            val clients = listOf<String?>(null, "android", "ios", "tv")
+            var success = false
+            for (client in clients) {
+                try {
+                    val request = YoutubeDLRequest(url)
+                    request.addOption("--no-playlist")
+                    request.addOption("-o", outDir.absolutePath + "/%(title)s.%(ext)s")
+                    if (client != null) {
+                        log("Retrying with client: $client")
+                        request.addOption("--extractor-args", "youtube:player_client=$client")
+                    }
+                    if (audio) {
+                        request.addOption("-f", "ba/b")
+                        request.addOption("-x")
+                        request.addOption("--audio-format", "mp3")
+                    } else {
+                        request.addOption("-f", "bv*+ba/b")
+                        request.addOption("--merge-output-format", "mp4")
+                    }
+                    YoutubeDL.getInstance().execute(request, null) { progress, _, line ->
+                        runOnUiThread { progressBar.progress = progress.toInt().coerceIn(0, 100) }
+                        if (line.isNotBlank()) log(line)
+                    }
+                    success = true
+                    break
+                } catch (e: Exception) {
+                    val reason = e.message?.lines()?.lastOrNull { it.isNotBlank() } ?: "unknown error"
+                    log("Failed (${client ?: "default"}): $reason")
                 }
-                YoutubeDL.getInstance().execute(request, null) { progress, _, line ->
-                    runOnUiThread { progressBar.progress = progress.toInt().coerceIn(0, 100) }
-                    if (line.isNotBlank()) log(line)
-                }
+            }
+            if (success) {
                 log("Saved in: ${outDir.absolutePath}")
                 setStatus("Done")
-            } catch (e: Exception) {
+            } else {
                 setStatus("Error")
-                log("Error: ${e.message}")
-            } finally {
-                busy = false
-                runOnUiThread { downloadBtn.isEnabled = true }
+                log("All attempts failed. Try 'Update yt-dlp' and retry.")
             }
+            busy = false
+            runOnUiThread { downloadBtn.isEnabled = true }
         }.start()
     }
 }
